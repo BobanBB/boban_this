@@ -17,7 +17,7 @@ const Footer = () => {
                         <ul className="space-y-2 text-sm sm:text-base">
                             <li>
                                 <Link
-                                    href="/trending"
+                                    href="/trade"
                                     className="hover:text-blue-500"
                                 >
                                     Hot

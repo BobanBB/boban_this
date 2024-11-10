@@ -30,10 +30,9 @@ function calculateCoinAge(createdAt) {
 async function fetchDataForAddress(address) {
     const url = `https://api.dexscreener.com/latest/dex/search?q=${address}`;
     const response = await axios.get(url);
-    const data =
-        response.data.pairs?.length > 0 ? response.data.pairs[0] : null;
+    const data = response.data.pairs?.length > 0 ? response.data.pairs[0] : null;
 
-    // Cache result with a 10-minute expiration (adjust as needed)
+    // Cache result with a 10-minute expiration
     if (data) {
         await redisClient.setex(address, 600, JSON.stringify(data));
     }
@@ -52,7 +51,6 @@ async function getCryptoStatsByAddresses(coinAddresses) {
             if (cachedData) {
                 statsArray.push(cachedData);
             } else {
-                // Background fetch for missing addresses
                 fetchPromises.push(
                     fetchDataForAddress(address).then((data) => {
                         if (data) statsArray.push(data);
@@ -77,13 +75,35 @@ export default async function handler(req, res) {
 
     if (req.method === "GET") {
         try {
-            const coins = (await Coin.find({})) || [];
-            const coinAddresses = coins.map((coin) => coin.contractAddress);
+            // Determine if only promoted coins should be fetched
+            const isPromoted = req.query.promoted === "true";
 
-            if (coinAddresses.length === 0) {
-                return res.status(200).json([]);
+            // Pagination parameters
+            const page = parseInt(req.query.page) || 1; // Default to page 1
+            const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page
+            const startIndex = (page - 1) * limit;
+
+            // Define query filter based on promotion status
+            const query = isPromoted ? { isPromote: true } : {};
+
+            // Get total count for pagination
+            const totalItems = await Coin.countDocuments(query);
+            const totalPages = Math.ceil(totalItems / limit);
+
+            // Fetch and sort coins based on promotion filter, then apply pagination
+            const coins = await Coin.find(query)
+                .sort({ rocket: -1, fire: -1, flag: -1, createdAt: -1 }) // Sorting in descending order
+                .skip(startIndex)
+                .limit(limit);
+
+            if (coins.length === 0) {
+                return res.status(200).json({
+                    data: [],
+                    pagination: { totalItems, totalPages, page, limit },
+                });
             }
 
+            const coinAddresses = coins.map((coin) => coin.contractAddress);
             const stats = await getCryptoStatsByAddresses(coinAddresses);
 
             const dexData = Object.fromEntries(
@@ -101,10 +121,10 @@ export default async function handler(req, res) {
                     symbol: coin.symbol,
                     name: coin.name,
                     slug: coin.slug,
-                    rocket: coin.rocket || 0, // Assuming 'rocket' is a number
-                    fire: coin.fire || 0, // Assuming 'fire' is a number
-                    flag: coin.flag || 0, // Assuming 'flag' is a number
-                    createdAt: coin.createdAt || new Date(), // Assuming createdAt is a Date object
+                    rocket: coin.rocket || 0,
+                    fire: coin.fire || 0,
+                    flag: coin.flag || 0,
+                    createdAt: coin.createdAt || new Date(),
                     volume_24h: coinDataFromDex?.volume?.h24 || 0,
                     market_cap: coinDataFromDex?.marketCap || null,
                     age: coinDataFromDex?.pairCreatedAt
@@ -138,26 +158,20 @@ export default async function handler(req, res) {
                 };
             });
 
-            // Sort the coins based on 'rocket', 'fire', 'flag', and 'createdAt' (latest first)
-            const sortedCoinsData = coinsData.sort((a, b) => {
-                if (b.rocket !== a.rocket) {
-                    return b.rocket - a.rocket;
-                }
-                if (b.fire !== a.fire) {
-                    return b.fire - a.fire;
-                }
-                if (b.flag !== a.flag) {
-                    return b.flag - a.flag;
-                }
-                // Sort by latest date (createdAt) if 'rocket', 'fire', and 'flag' are equal
-                return new Date(b.createdAt) - new Date(a.createdAt);
-            });
-
-            const dailyGainers = sortedCoinsData.sort(
+            // Sort coins based on daily gainers
+            const dailyGainers = coinsData.sort(
                 (a, b) => b.percent_change_24h - a.percent_change_24h
             );
 
-            return res.status(200).json(dailyGainers);
+            return res.status(200).json({
+                data: dailyGainers,
+                pagination: {
+                    totalItems,
+                    totalPages,
+                    page,
+                    limit,
+                },
+            });
         } catch (error) {
             console.error("Error querying database:", error);
             return res.status(500).json({ error: "Error querying database" });
@@ -166,4 +180,3 @@ export default async function handler(req, res) {
         res.status(405).json({ message: "Method not allowed" });
     }
 }
-
