@@ -147,13 +147,13 @@ export default async function handler(req, res) {
                 };
             });
 
-            // Filter coins with age less than 30 days
-            const newCoins = coinsData.filter((coin) =>
-                coin.age.endsWith("d") && parseInt(coin.age) < 30
-            );
+            // // Filter coins with age less than 30 days
+            // const newCoins = coinsData.filter((coin) =>
+            //     coin.age.endsWith("d") && parseInt(coin.age) < 30
+            // );
 
             return res.status(200).json({
-                data: newCoins,
+                data: coinsData,
                 pagination: {
                     totalItems,
                     totalPages,

@@ -147,12 +147,12 @@ export default async function handler(req, res) {
                 };
             });
 
-            const newCoins = coinsData.filter((coin) =>
-                coin.age.endsWith("d") && parseInt(coin.age) < 30
-            );
+            // const newCoins = coinsData.filter((coin) =>
+            //     coin.age.endsWith("d") && parseInt(coin.age) < 30
+            // );
 
             return res.status(200).json({
-                data: newCoins,
+                data: coinsData,
                 pagination: {
                     totalItems,
                     totalPages,
