@@ -75,8 +75,9 @@ export default async function handler(req, res) {
             const limit = parseInt(req.query.limit) || 10;
             const startIndex = (page - 1) * limit;
 
-            const query = { blockchain: "ETH" };
+            const query = {};
             if (isPromoted) query.isPromote = true;
+            else if (!isPromoted) query.blockchain = "ETH";
 
             const totalItems = await Coin.countDocuments(query);
             const totalPages = Math.ceil(totalItems / limit);
