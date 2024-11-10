@@ -2,7 +2,6 @@ import dbConnect from "../../../lib/mongodb";
 import Coin from "../../../models/Coin";
 import axios from "axios";
 import dayjs from "dayjs"; // For date manipulation
-
 import { Redis } from "@upstash/redis";
 
 const redisClient = new Redis({
@@ -31,10 +30,9 @@ function calculateCoinAge(createdAt) {
 async function fetchDataForAddress(address) {
     const url = `https://api.dexscreener.com/latest/dex/search?q=${address}`;
     const response = await axios.get(url);
-    const data =
-        response.data.pairs?.length > 0 ? response.data.pairs[0] : null;
+    const data = response.data.pairs?.length > 0 ? response.data.pairs[0] : null;
 
-    // Cache result with a 10-minute expiration (adjust as needed)
+    // Cache result with a 10-minute expiration
     if (data) {
         await redisClient.setex(address, 600, JSON.stringify(data));
     }
@@ -43,48 +41,59 @@ async function fetchDataForAddress(address) {
 
 async function getCryptoStatsByAddresses(coinAddresses) {
     const statsArray = [];
-    const fetchPromises = [];
-
-    for (const address of coinAddresses) {
-        if (!address) continue; // Skip invalid addresses
+    const fetchPromises = coinAddresses.map(async (address) => {
+        if (!address) return;
 
         try {
-            const cachedData = await redisClient.get(address);
-            if (cachedData) {
-                statsArray.push(cachedData);
-            } else {
-                // Background fetch for missing addresses
-                fetchPromises.push(
-                    fetchDataForAddress(address).then((data) => {
-                        if (data) statsArray.push(data);
-                    })
-                );
+            let cachedData = await redisClient.get(address);
+
+            // Parse only if cachedData is a string
+            if (typeof cachedData === "string") {
+                cachedData = JSON.parse(cachedData);
             }
+
+            // If no cached data, fetch it and cache the result
+            const data = cachedData || await fetchDataForAddress(address);
+            if (data) statsArray.push(data);
         } catch (error) {
-            console.error(`Error processing address ${address}:`, error);
+            console.error(`Error processing address ${address}: ${error.message}`);
         }
-    }
+    });
 
-    // Start background fetching without blocking
-    Promise.all(fetchPromises).catch((err) =>
-        console.error("Error fetching missing data:", err)
-    );
-
-    return statsArray; // Return immediately with cached data
+    await Promise.all(fetchPromises);
+    return statsArray;
 }
+
 
 export default async function handler(req, res) {
     await dbConnect();
 
     if (req.method === "GET") {
         try {
-            const coins = (await Coin.find({ blockchain: "ETH" })) || [];
-            const coinAddresses = coins.map((coin) => coin.contractAddress);
+            const isPromoted = req.query.promoted === "true";
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 10;
+            const startIndex = (page - 1) * limit;
 
-            if (coinAddresses.length === 0) {
-                return res.status(200).json([]);
+            const query = { blockchain: "ETH" };
+            if (isPromoted) query.isPromote = true;
+
+            const totalItems = await Coin.countDocuments(query);
+            const totalPages = Math.ceil(totalItems / limit);
+
+            const coins = await Coin.find(query)
+                .sort({ rocket: -1, fire: -1, flag: -1, createdAt: -1 })
+                .skip(startIndex)
+                .limit(limit);
+
+            if (coins.length === 0) {
+                return res.status(200).json({
+                    data: [],
+                    pagination: { totalItems, totalPages, page, limit },
+                });
             }
 
+            const coinAddresses = coins.map((coin) => coin.contractAddress);
             const stats = await getCryptoStatsByAddresses(coinAddresses);
 
             const dexData = Object.fromEntries(
@@ -102,10 +111,10 @@ export default async function handler(req, res) {
                     symbol: coin.symbol,
                     name: coin.name,
                     slug: coin.slug,
-                    rocket: coin.rocket || 0, // Assuming 'rocket' is a number
-                    fire: coin.fire || 0, // Assuming 'fire' is a number
-                    flag: coin.flag || 0, // Assuming 'flag' is a number
-                    createdAt: coin.createdAt || new Date(), // Assuming createdAt is a Date object
+                    rocket: coin.rocket || 0,
+                    fire: coin.fire || 0,
+                    flag: coin.flag || 0,
+                    createdAt: coin.createdAt || new Date(),
                     volume_24h: coinDataFromDex?.volume?.h24 || 0,
                     market_cap: coinDataFromDex?.marketCap || null,
                     age: coinDataFromDex?.pairCreatedAt
@@ -114,8 +123,7 @@ export default async function handler(req, res) {
                     lp: coinDataFromDex?.liquidity?.usd || null,
                     isPromote: coin.isPromote,
                     txn: coinDataFromDex?.txns?.h24
-                        ? coinDataFromDex.txns.h24.buys +
-                          coinDataFromDex.txns.h24.sells
+                        ? coinDataFromDex.txns.h24.buys + coinDataFromDex.txns.h24.sells
                         : 0,
                     image: coinDataFromDex?.info?.imageUrl || coin?.imageUrl,
                 };
@@ -139,25 +147,19 @@ export default async function handler(req, res) {
                 };
             });
 
-            // Sort the coins based on 'rocket', 'fire', 'flag', and 'createdAt' (latest first)
-            const sortedCoinsData = coinsData.sort((a, b) => {
-                if (b.rocket !== a.rocket) {
-                    return b.rocket - a.rocket;
-                }
-                if (b.fire !== a.fire) {
-                    return b.fire - a.fire;
-                }
-                if (b.flag !== a.flag) {
-                    return b.flag - a.flag;
-                }
-                // Sort by latest date (createdAt) if 'rocket', 'fire', and 'flag' are equal
-                return new Date(b.createdAt) - new Date(a.createdAt);
+            const newCoins = coinsData.filter((coin) =>
+                coin.age.endsWith("d") && parseInt(coin.age) < 30
+            );
+
+            return res.status(200).json({
+                data: newCoins,
+                pagination: {
+                    totalItems,
+                    totalPages,
+                    page,
+                    limit,
+                },
             });
-
-            // Filter for coins with age less than 30 days
-            const newCoins = sortedCoinsData
-
-            return res.status(200).json(newCoins);
         } catch (error) {
             console.error("Error querying database:", error);
             return res.status(500).json({ error: "Error querying database" });

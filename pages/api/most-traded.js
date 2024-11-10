@@ -40,34 +40,28 @@ async function fetchDataForAddress(address) {
 
 async function getCryptoStatsByAddresses(coinAddresses) {
     const statsArray = [];
-    const fetchPromises = [];
-
-    for (const address of coinAddresses) {
-        if (!address) continue;
+    const fetchPromises = coinAddresses.map(async (address) => {
+        if (!address) return;
 
         try {
-            const cachedData = await redisClient.get(address);
-            const parsedData = typeof cachedData === 'string' ? JSON.parse(cachedData) : cachedData;
-            if (parsedData) {
-                statsArray.push(parsedData);
-            } else {
-                fetchPromises.push(
-                    fetchDataForAddress(address).then((data) => {
-                        if (data) statsArray.push(data);
-                    })
-                );
+            let cachedData = await redisClient.get(address);
+            // Check if cachedData is a string and needs parsing
+            if (typeof cachedData === "string") {
+                cachedData = JSON.parse(cachedData);
             }
+
+            // If there's no cached data, fetch it and cache the result
+            const data = cachedData || await fetchDataForAddress(address);
+            if (data) statsArray.push(data);
         } catch (error) {
             console.error(`Error processing address ${address}:`, error);
         }
-    }
+    });
 
-    Promise.all(fetchPromises).catch((err) =>
-        console.error("Error fetching missing data:", err)
-    );
-
+    await Promise.all(fetchPromises);
     return statsArray;
 }
+
 
 export default async function handler(req, res) {
     await dbConnect();
