@@ -35,6 +35,26 @@ const CoinSchema = new mongoose.Schema({
         type: String,
         default: '',
     },
+    facebookLink:{
+        type: String,
+        default: '',
+    },
+    instagramLink:{
+        type: String,
+        default: '',
+    },
+    redditLink:{
+        type: String,
+        default: '',
+    },
+    fanvueLink:{
+        type: String,
+        default: '',
+    },
+    linktreeLink:{
+        type: String,
+        default: '',
+    },
     promoteTime:{
         type: Date,
         default: null,

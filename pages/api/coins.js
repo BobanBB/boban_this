@@ -43,7 +43,7 @@ async function postToTelegram(message) {
         if (!response.ok) {
             throw new Error("Failed to post to Telegram", response);
         }
-
+        return;
         console.log("Successfully posted to Telegram");
     } catch (error) {
         console.error("Error posting to Telegram:", error);
@@ -64,11 +64,23 @@ export default async function handler(req, res) {
         }
     } else if (req.method === "PUT") {
         try {
-            const { id } = req.query; // Get the coin ID from the query parameters
+            const { id, update } = req.query; // Get the coin ID from the query parameters
             const updateData = req.body; // The data to update
 
             // Find the coin by ID and update it with the new data
-            const updatedCoin = await Coin.findByIdAndUpdate(id, updateData, {
+            const filteredUpdateData = Object.keys(updateData).reduce((acc, key) => {
+                if (updateData[key] !== "") {
+                    acc[key] = updateData[key];
+                }
+                return acc;
+            }, {});
+
+            // If no fields are to be updated, return a bad request response
+            if (Object.keys(filteredUpdateData).length === 0) {
+                return res.status(400).json({ error: "No valid fields to update" });
+            }
+            console.log("updatedData",updateData);
+            const updatedCoin = await Coin.findByIdAndUpdate(id, filteredUpdateData, {
                 new: true, // Return the updated document
             });
 
@@ -80,7 +92,7 @@ export default async function handler(req, res) {
 
             // Post to X and Telegram
             // await postToTwitter(message);
-            await postToTelegram(message);
+            if (!update){await postToTelegram(message);}
 
             return res.status(200).json({}); // Return the updated coin
         } catch (error) {

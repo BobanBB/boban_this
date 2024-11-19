@@ -36,7 +36,7 @@ export default async function handler(req, res) {
             console.log('File:', req.file);  // Should show the file object
             console.log('Body:', req.body);   // Should show the rest of the form data
 
-            const { blockchain, contractAddress, name, symbol, description, isPresale, launchDate, presaleUrl } = req.body;
+            const { blockchain, contractAddress, name, symbol, description, isPresale, launchDate, presaleUrl, website="", twitter="", telegram="", discord="", facebook="", reddit="", linktree="", instagram="", fanvue="" } = req.body;
             const file = req.file;
 
             if (!file) {
@@ -62,7 +62,16 @@ export default async function handler(req, res) {
                 launchDate,
                 presaleUrl,
                 imageUrl,
-                slug:slug,  // Adding slug
+                slug:slug,
+                websiteLink:website,
+                twitterLink:twitter,
+                telegramLink:telegram,
+                discordLink:discord,
+                fanvueLink:fanvue,
+                instagramLink:instagram,
+                facebookLink:facebook,
+                redditLink:reddit,
+                linktreeLink:linktree
             });
             await newCoin.save();
 

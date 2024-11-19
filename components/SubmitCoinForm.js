@@ -674,6 +674,8 @@ const SubmitCoinForm = () => {
                                     "facebook",
                                     "reddit",
                                     "linktree",
+                                    "instagram",
+                                    "fanvue"
                                 ].map((field) => (
                                     <TextField
                                         key={field}
