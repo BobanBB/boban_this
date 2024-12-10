@@ -172,12 +172,10 @@ const Footer = () => {
                         services is solely at your own risk and discretion. You
                         should conduct your own research, review, analyse and
                         verify our content and services before relying on or
-                        using them. 
-                        
-                        {/* Trading is a highly risky activity that can
+                        using them. Trading is a highly risky activity that can
                         lead to major losses, please therefore consult your
                         financial advisor before making any decision. No content
-                        on our Site is meant to be a solicitation or offer. */}
+                        on our Site is meant to be a solicitation or offer.
                     </p>
                 </div>
 
