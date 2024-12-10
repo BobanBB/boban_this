@@ -86,7 +86,7 @@ export default async function handler(req, res) {
             const totalPages = Math.ceil(totalItems / limit);
 
             const coins = await Coin.find(query)
-                .sort({ rocket: -1, fire: -1, flag: -1, createdAt: -1 })
+                .sort({ createdAt: -1, rocket: -1, fire: -1, flag: -1 })
                 .skip(startIndex)
                 .limit(limit);
 

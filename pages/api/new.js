@@ -96,7 +96,7 @@ export default async function handler(req, res) {
 
             // Fetch and sort coins based on promotion filter, then apply pagination
             const coins = await Coin.find(query)
-                .sort({ rocket: -1, fire: -1, flag: -1, createdAt: -1 }) // Sorting in descending order
+                .sort({ createdAt: -1, rocket: -1, fire: -1, flag: -1 }) // Sorting in descending order
                 .skip(startIndex)
                 .limit(limit);
 
