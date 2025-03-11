@@ -93,8 +93,8 @@ export default function Home() {
     return (
         <>
             <Head>
-                <title>Most Traded</title>
-                <meta name="description" content="Most Traded Coins - Top trending Crypto Coins today | bobantoken.com" />
+                <title>Most Traded Cryptocurrency Coins Today | BobanToken</title>
+                <meta name="description" content="Explore top-traded crypto coins with the highest trading volume. Analyze real-time stats to find the best opportunities for your investment strategy." />
                 <meta name="viewport" content="width=device-width, initial-scale=1" />
                 <link rel="icon" href="/favicon.ico" />
             </Head>

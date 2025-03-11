@@ -97,8 +97,8 @@ export default function Home() {
     return (
         <>
             <Head>
-                <title>Trending Coins</title>
-                <meta name="description" content="Trending Coins - Top trending Crypto Coins today | bobantoken.com" />
+                <title>New Coin Listings Today & This Week | BobanToken</title>
+                <meta name="description" content="See the latest new cryptocurrency coin listings added today. Discover trending mineable coins, ERC-20 tokens, DeFi projects, altcoins, and blockchain tokens." />
                 <meta name="viewport" content="width=device-width, initial-scale=1" />
                 <link rel="icon" href="/favicon.ico" />
             </Head>

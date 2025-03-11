@@ -24,16 +24,16 @@ export default function Home() {
     const fetchAllCoins = useCallback(async () => {
         setIsFetchingAll(true);
         try {
-            const response = await fetch(`/api/get-all-stats-1?page=${pageAll}&limit=10`);
+            const response = await fetch(`/api/new?page=${pageAll}&limit=10`);
             const data = await response.json();
 
             if (response.ok) {
                 const newCoins = data.data;
                 const { totalPages } = data.pagination;
-                
+
                 // Check if there's more data to fetch
                 setHasMoreAll(pageAll < totalPages);
-                
+
                 setCryptoStats((prevStats) => [...prevStats, ...newCoins]);
             } else {
                 console.error("Error fetching all coins:", data.error);
@@ -99,10 +99,10 @@ export default function Home() {
     return (
         <>
             <Head>
-                <title>Boban</title>
+                <title>Top Coin Listing Site | Best Cryptocurrency Prices, Charts & Token Data</title>
                 <meta
                     name="description"
-                    content="Top Coins Listing site today | Find the best trending crypto projects here!"
+                    content="Discover live crypto prices, charts, market cap & trends. Get the latest on Bitcoin, altcoins, and cryptocurrency market updates. Stay ahead with BobanToken!"
                 />
                 <meta
                     name="viewport"
@@ -116,16 +116,15 @@ export default function Home() {
                     toggleSidebar={toggleSidebar}
                 />
                 <div
-                    className={`min-h-screen bg-black text-white p-4 sm:p-6 pt-16 sm:pt-20 transition-all duration-300 ${
-                        isSidebarOpen ? "md:ml-64" : "ml-0"
-                    }`}
+                    className={`min-h-screen bg-black text-white p-4 sm:p-6 pt-16 sm:pt-20 transition-all duration-300 ${isSidebarOpen ? "md:ml-64" : "ml-0"
+                        }`}
                 >
                     <Banner />
                     <h2 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-3">
                         Promoted Coins
                     </h2>
                     <PromoteTable coinsData={promotedCoins} />
-                    
+
                     {/* Load More Button below PromoteTable */}
                     <div className="flex justify-center my-4">
                         {isFetchingPromoted && !initialPromotedLoad ? (
@@ -182,11 +181,10 @@ export default function Home() {
                         )}
                     </div>
                 </div>
-            </main>  
+            </main>
             <div
-                className={`transition-all duration-300 ${
-                    isSidebarOpen ? "md:ml-64" : "ml-0"
-                }`}
+                className={`transition-all duration-300 ${isSidebarOpen ? "md:ml-64" : "ml-0"
+                    }`}
             >
                 <Footer />
             </div>

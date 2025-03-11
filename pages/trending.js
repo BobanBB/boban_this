@@ -93,8 +93,8 @@ export default function Home() {
     return (
         <>
             <Head>
-                <title>Trending</title>
-                <meta name="description" content="Trending Coins - Top trending Crypto Coins today | bobantoken.com" />
+                <title>Trending Cryptocurrency Coins & Tokens Today | BobanToken</title>
+                <meta name="description" content="Find the hottest and most popular cryptocurrencies based on price action and search trends. Discover trending coins, tokens, and market movers on BobanToken!" />
                 <meta name="viewport" content="width=device-width, initial-scale=1" />
                 <link rel="icon" href="/favicon.ico" />
             </Head>
